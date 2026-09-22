@@ -17,7 +17,13 @@ mkdir -p vendor
 clone_one() {
   local name="$1" branch="$2" url="$3"
   if [[ -d "vendor/$name/.git" ]]; then
-    echo "vendor/$name already cloned; preserving working tree"
+    local actual_branch
+    actual_branch="$(git -C "vendor/$name" symbolic-ref --short HEAD 2>/dev/null || true)"
+    if [[ "$actual_branch" != "$branch" ]]; then
+      echo "vendor/$name is on $actual_branch; expected $branch. Resolve this checkout manually; no branch switching performed." >&2
+      exit 1
+    fi
+    echo "vendor/$name already cloned on $branch; preserving working tree"
   elif [[ -e "vendor/$name" ]]; then
     echo "vendor/$name exists but is not a Git clone; refusing to overwrite" >&2; exit 1
   else
