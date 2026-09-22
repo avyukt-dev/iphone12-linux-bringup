@@ -7,7 +7,7 @@ cd "$(dirname "$0")/.."
 for tool in aarch64-linux-gnu-gcc aarch64-linux-gnu-readelf qemu-aarch64 python3; do
   if ! command -v "$tool" >/dev/null 2>&1; then
     echo "Missing host tool: $tool" >&2
-    echo 'On Ubuntu: sudo apt install gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu qemu-user python3' >&2
+    echo 'On Ubuntu: sudo apt install gcc-aarch64-linux-gnu libc6-dev-arm64-cross binutils-aarch64-linux-gnu qemu-user python3' >&2
     exit 1
   fi
 done
