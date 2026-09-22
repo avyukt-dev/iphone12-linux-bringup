@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Build a deterministic, minimal ARM64 initramfs (cpio newc + gzip).
+"""Build deterministic ARM64 initramfs (cpio newc + gzip), optionally with BusyBox.
 
-Host-side packaging only: image has /init and /dev/console, NOT a shell,
-networking, Apple drivers, bootloader, kernel, or firmware.
+The optional BusyBox binary is built from its separate GPL-2.0 source by
+scripts/build_busybox.sh. Packaging is host-side only; no device is accessed.
 """
 import argparse
 import gzip
@@ -43,31 +43,49 @@ def _append_entry(
     _pad4(out)
 
 
-def build_cpio(init_elf: bytes) -> bytes:
+def build_cpio(init_elf: bytes, busybox_elf: bytes | None = None) -> bytes:
     require_arm64_elf(init_elf)
+    if busybox_elf is not None:
+        require_arm64_elf(busybox_elf)
     out = bytearray()
-    dirs = ('dev', 'proc', 'sys', 'bin')
-    for ino, name in enumerate(dirs, start=1):
+    names = ('dev', 'proc', 'sys', 'bin') + (('www',) if busybox_elf is not None else ())
+    ino = 1
+    for name in names:
         _append_entry(out, name, stat.S_IFDIR | 0o755, b'', ino)
-    # Kernel creates this character device from cpio metadata; no mknod
-    # permission or root privileges are needed to construct the archive.
-    _append_entry(out, 'dev/console', stat.S_IFCHR | 0o600, b'', 5,
+        ino += 1
+    # Kernel creates device from cpio metadata: host needs no root/mknod.
+    _append_entry(out, 'dev/console', stat.S_IFCHR | 0o600, b'', ino,
                   rdevmajor=5, rdevminor=1)
-    _append_entry(out, 'init', stat.S_IFREG | 0o755, init_elf, 6)
-    _append_entry(out, 'TRAILER!!!', 0, b'', 7)
+    ino += 1
+    _append_entry(out, 'init', stat.S_IFREG | 0o755, init_elf, ino)
+    ino += 1
+    if busybox_elf is not None:
+        _append_entry(out, 'bin/busybox', stat.S_IFREG | 0o755, busybox_elf, ino)
+        ino += 1
+        # Explicit applets rather than an unpredictable, ambient host PATH.
+        for applet in ('sh', 'ls', 'cat', 'mount', 'ip', 'httpd', 'uname', 'ps', 'echo'):
+            _append_entry(out, f'bin/{applet}', stat.S_IFLNK | 0o777,
+                          b'busybox', ino)
+            ino += 1
+        _append_entry(out, 'www/index.html', stat.S_IFREG | 0o644,
+                      b'A14 Linux host-built userspace test page\n', ino)
+        ino += 1
+    _append_entry(out, 'TRAILER!!!', 0, b'', ino)
     return bytes(out)
 
 
-def build_gzip(init_elf: bytes) -> bytes:
-    return gzip.compress(build_cpio(init_elf), compresslevel=9, mtime=0)
+def build_gzip(init_elf: bytes, busybox_elf: bytes | None = None) -> bytes:
+    return gzip.compress(build_cpio(init_elf, busybox_elf), compresslevel=9, mtime=0)
 
 
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--init', dest='executable', required=True, type=Path)
+    p.add_argument('--busybox', type=Path, help='Separately built static GPL BusyBox for shell and HTTP applets')
     p.add_argument('--output', required=True, type=Path)
     args = p.parse_args()
-    data = build_gzip(args.executable.read_bytes())
+    data = build_gzip(args.executable.read_bytes(),
+                      args.busybox.read_bytes() if args.busybox else None)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_bytes(data)
     print(f'host-only initramfs: {args.output} ({len(data)} bytes compressed)')
