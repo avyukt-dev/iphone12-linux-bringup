@@ -2,11 +2,11 @@
 
 **Scope:** first headless Linux boot, then console, networking, SSH, and an HTTP test server. No display, camera, cellular, persistent installation, or write access to iOS storage during initial bring-up.
 
-## G0: Document exact hardware and source baselines (host only)
+## G0: Document exact hardware and source baselines (host only) — COMPLETE for identity
 - Record the precise device model/board code and firmware build from evidence, not a guessed memory map.
 - Record exact kernel and bootloader commit SHAs; audit driver and device-tree declarations.
-- Establish a documented host-side diagnostic transport and a non-destructive recovery procedure.
-- Evidence: source inventory and references to actual hardware/firmware data.
+- Establish a working, non-invasive USB lockdown diagnostic connection (done for the four identity/firmware keys). A device-specific *recovery and boot-debug procedure* remains an independent prerequisite for G1, not evidence gained from the diagnostic connection.
+- Evidence: [G0 owner-reported observation and pinned source baseline](../reports/a14-baseline-2026-09-22.md), with [G1 boot-entry analysis](../reports/boot-path-g1-24A437.md).
 
 ## G1: Demonstrate an A14 custom-code boot path (blocking)
 - Establish a repeatable, authorized way to launch a custom payload outside iOS on the exact device and firmware build.
