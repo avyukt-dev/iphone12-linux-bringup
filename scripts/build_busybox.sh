@@ -50,6 +50,9 @@ for symbol in ('STATIC', 'ASH', 'HTTPD', 'IP'):
 # x86-specific options; do not patch the upstream GPL source.
 for symbol in ('SHA1_HWACCEL', 'SHA256_HWACCEL'):
     s = s.replace(f'CONFIG_{symbol}=y', f'# CONFIG_{symbol} is not set')
+# Linux removed old CBQ traffic-control uapi structures; BusyBox 1.37.0
+# tc.c still requires them. tc is not needed by this headless userspace.
+s = s.replace('CONFIG_TC=y', '# CONFIG_TC is not set')
 p.write_text(s)
 PY
 make -C "$ROOT" -j2 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- \
