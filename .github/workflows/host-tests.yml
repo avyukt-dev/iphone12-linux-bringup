@@ -1,0 +1,20 @@
+name: Host-only source audit tests
+on:
+  push:
+    branches: [main, research/a14-source-audit]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify shell and Python syntax
+        run: |
+          bash -n scripts/bootstrap.sh
+          python3 -m py_compile scripts/a14_audit.py
+      - name: Test source-audit logic (no device access)
+        run: python3 -m unittest discover -s tests -v

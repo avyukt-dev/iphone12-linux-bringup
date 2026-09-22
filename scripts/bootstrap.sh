@@ -17,7 +17,13 @@ mkdir -p vendor
 clone_one() {
   local name="$1" branch="$2" url="$3"
   if [[ -d "vendor/$name/.git" ]]; then
-    echo "vendor/$name already cloned; preserving working tree"
+    local actual_branch
+    actual_branch="$(git -C "vendor/$name" symbolic-ref --short HEAD 2>/dev/null || true)"
+    if [[ "$actual_branch" != "$branch" ]]; then
+      echo "vendor/$name is on $actual_branch; expected $branch. Resolve this checkout manually; no branch switching performed." >&2
+      exit 1
+    fi
+    echo "vendor/$name already cloned on $branch; preserving working tree"
   elif [[ -e "vendor/$name" ]]; then
     echo "vendor/$name exists but is not a Git clone; refusing to overwrite" >&2; exit 1
   else
@@ -25,12 +31,14 @@ clone_one() {
   fi
 }
 clone_one docs master https://github.com/HoolockLinux/docs.git
-clone_one m1n1 idevice https://github.com/avyukt-dev/m1n1.git
+clone_one m1n1 research/iphone12-a14 https://github.com/avyukt-dev/m1n1.git
+# Hoolock m1n1 depends on Git submodules for a complete source checkout.
+git -C vendor/m1n1 submodule update --init --recursive
 clone_one HoolockRD master https://github.com/HoolockLinux/HoolockRD.git
 clone_one projectsandcastle master https://github.com/corellium/projectsandcastle.git
 if (( with_kernel )); then
   echo 'Kernel checkout may consume multiple GB of disk space.'
-  clone_one linux hoolock https://github.com/avyukt-dev/linux.git
+  clone_one linux research/iphone12-a14 https://github.com/avyukt-dev/linux.git
 fi
 if (( with_sandcastle )); then
   echo 'Sandcastle kernel checkout may consume substantial disk space.'
