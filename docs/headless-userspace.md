@@ -8,7 +8,7 @@ by this milestone.
 
 Install host dependencies:
 
-`sudo apt update && sudo apt install -y gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu qemu-user python3`
+`sudo apt update && sudo apt install -y gcc-aarch64-linux-gnu libc6-dev-arm64-cross binutils-aarch64-linux-gnu qemu-user python3`
 
 From this repository:
 
