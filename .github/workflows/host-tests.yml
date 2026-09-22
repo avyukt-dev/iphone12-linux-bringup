@@ -1,7 +1,7 @@
 name: Host-only source audit tests
 on:
   push:
-    branches: [main, research/a14-source-audit]
+    branches: [main, research/a14-source-audit, research/noninvasive-device-facts]
   pull_request:
 
 permissions:
@@ -15,6 +15,6 @@ jobs:
       - name: Verify shell and Python syntax
         run: |
           bash -n scripts/bootstrap.sh
-          python3 -m py_compile scripts/a14_audit.py
+          python3 -m py_compile scripts/a14_audit.py scripts/collect_device_facts.py
       - name: Test source-audit logic (no device access)
         run: python3 -m unittest discover -s tests -v
