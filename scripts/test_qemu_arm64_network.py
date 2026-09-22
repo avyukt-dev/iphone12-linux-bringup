@@ -38,7 +38,7 @@ def run_vm_network(kernel: Path, initramfs: Path, timeout: float = 100) -> None:
         '-kernel', str(kernel.resolve()), '-initrd', str(initramfs.resolve()),
         '-append', 'console=ttyAMA0 rdinit=/init loglevel=5',
         '-netdev', f'user,id=n0,restrict=on,hostfwd=tcp:127.0.0.1:{host_port}-:8080',
-        '-device', 'virtio-net-pci,netdev=n0',
+        '-device', 'virtio-net-device,netdev=n0',
     ]
     process = subprocess.Popen(
         cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
