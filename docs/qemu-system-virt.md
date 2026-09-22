@@ -28,11 +28,13 @@ The test downloads only Debian's published ARM64 *generic installer kernel*
 from https://deb.debian.org/debian/dists/bookworm/main/installer-arm64/current/images/netboot/debian-installer/arm64/linux
 and checks its SHA-256 against that release's
 [SHA256SUMS](https://deb.debian.org/debian/dists/bookworm/main/installer-arm64/current/images/SHA256SUMS).
-The `current` URL can change after upstream Debian updates: the test logs the
-exact checksum observed for each run; it does **not** claim the kernel's
-release or hash is immutable. A matching checksum from the same HTTPS
-distribution endpoint is an integrity check but is not independent
-cryptographic signature validation.
+The downloaded Debian ARM64 kernel is pinned to SHA-256
+`84b9c190bb4589c4a9527e3191fec051f9f115e88f0a3e8afae96ba0dfb4dfef`,
+measured during the passing full-system CI run on 2026-09-22. The test rejects
+changes to Debian's mutable `current` kernel rather than silently using a
+new kernel; a future update requires an explicit code change and a new test.
+The checksum manifest is fetched over HTTPS from the same distributor and
+is an integrity check, not independent cryptographic signature verification.
 
 QEMU parameters: `-machine virt -cpu cortex-a72 -m 768M -smp 2`,
 an isolated generic ARM64 kernel, our gzip initramfs, serial console
