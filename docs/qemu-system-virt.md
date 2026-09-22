@@ -51,3 +51,11 @@ Evidence to advance a *physical* iPhone milestone still requires an
 authorized A14 custom-code boot entry (G1), validated hardware description,
 and real on-device Linux console logs. See
 [the blocker report](../reports/boot-path-g1-24A437.md).
+
+## Optional virtual network experiment — not yet passing
+
+A host-only network probe is available in `scripts/test_qemu_arm64_network.py`, but is **deliberately not a required CI check**. With the pinned Debian ARM64 installer kernel and a QEMU `virtio-net-device`, the generic ARM64 guest reached our `/init` and interactive shell, but `ip link show eth0` returned `ip: can't find device 'eth0'`. The guest consequently could not serve the test page through the forwarded host port. [Unsuccessful, recorded CI experiment](https://github.com/avyukt-dev/iphone12-linux-bringup/actions/runs/35768405105).
+
+The exact reason `eth0` is missing has **not** been determined: the kernel's built-in VirtIO network support, loadable module availability, and alternative interface names remain to be checked. Installing a driver, building a suitably configured **generic VM** kernel, or inspecting the guest's detected devices are host-only possible next steps. This is **not evidence about the A14's USB or Wi-Fi driver support**, and no actual iPhone was involved.
+
+Do not mark G4 networking complete on the basis of earlier QEMU *user-mode* HTTP tests; those use the **host** Linux network stack. Real iPhone networking still requires the independent G1 native boot entry and appropriate platform drivers.
