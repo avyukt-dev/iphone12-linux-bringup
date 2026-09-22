@@ -27,7 +27,7 @@ python3 scripts/collect_device_facts.py
 
 The audit returns exit code 2 when there is no A14 DTB declaration, the matching DTS source is missing, or a requested verified DTB suffix is absent. An exit code of 0 only means that the requested source declarations are present; it **does not** mean that A14 boots. Apple BoardConfig `D53gAP` is not a validated Linux DTB filename suffix.
 
-For a privacy-preserving physical-device observation, follow [G0: read-only iPhone facts](docs/device-facts.md). No phone identifiers, unique IDs, or firmware images should be committed to this repository.
+G0 identity/firmware observation has been received from the owner: iPhone 12 (`iPhone13,2` / `D53gAP`), iOS 27.0 (`24A437`). [Read the evidence-scoped boot-path review](reports/boot-path-g1-24A437.md). **Native custom-code boot (G1) is not established.** For re-checks, follow [G0: read-only iPhone facts](docs/device-facts.md). Do not commit serial numbers, unique identifiers, or firmware images.
 
 See the [pinned, evidence-based A14 source baseline](reports/a14-baseline-2026-09-22.md), [engineering gates](docs/bringup-plan.md), [repository inventory](reports/upstream-inventory.md), and the [development policy](docs/development-policy.md). Hardware/bootloader changes belong on the `research/iphone12-a14` branch in each fork, not on the default branches.
 
