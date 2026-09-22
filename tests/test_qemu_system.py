@@ -28,6 +28,10 @@ class GenericArm64KernelManifestTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Invalid SHA-256'):
             tool.checksum_from_manifest('not-a-hash  ' + tool.REL_KERNEL)
 
+    def test_kernel_checksum_is_pinned_from_verified_ci_boot(self):
+        self.assertEqual(tool.PINNED_KERNEL_SHA256,
+                         '84b9c190bb4589c4a9527e3191fec051f9f115e88f0a3e8afae96ba0dfb4dfef')
+
     def test_marker_is_not_claim_of_iphone_execution(self):
         self.assertIn('QEMU_SYSTEM_', tool.MARKER)
         self.assertNotIn('IPHONE', tool.MARKER)
