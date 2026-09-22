@@ -1,61 +1,80 @@
 #!/usr/bin/env python3
-"""Offline inventory of declared Apple device trees in a Linux source tree.
-
-This checks source declarations only. It is NOT an exploit, driver test,
-hardware compatibility certification, or evidence of an A14 Linux boot.
-"""
+"""Inspect source declarations, not actual A14 boot or hardware compatibility."""
 import argparse
 import json
 from pathlib import Path
 import re
+import subprocess
 import sys
 
 DTB_RE = re.compile(
-    r'^\s*dtb-\$\(CONFIG_ARCH_APPLE\)\s*\+=\s*([A-Za-z0-9_-]+)\.dtb\s*$',
+    r'^\s*dtb-\$\(CONFIG_ARCH_APPLE\)\s*\+=\s*([A-Za-z0-9_-]+)\.dtb\s*(?:#.*)?$',
     re.MULTILINE,
 )
+SOC = 't8101'
+MODEL = 'iPhone13,2'
+BOARD_CONFIG = 'D53gAP'
 
 
-def inspect(kernel: Path, m1n1: Path, soc: str, board: str | None) -> dict:
-    makefile = kernel / 'arch/arm64/boot/dts/apple/Makefile'
+def git_head(root: Path):
+    if not (root / '.git').exists():
+        return None
+    result = subprocess.run(['git', '-C', str(root), 'rev-parse', 'HEAD'],
+                            text=True, capture_output=True, check=False)
+    return result.stdout.strip() if result.returncode == 0 else None
+
+
+def inspect(kernel: Path, m1n1: Path, soc: str = SOC, board: str | None = None) -> dict:
+    """Return evidence for matching DTBs; board is a *verified DTB suffix*, not BoardConfig."""
+    root = kernel / 'arch/arm64/boot/dts/apple'
+    makefile = root / 'Makefile'
     if not makefile.is_file():
         raise FileNotFoundError(f'Apple DTB Makefile not found: {makefile}')
-    names = DTB_RE.findall(makefile.read_text(encoding='utf-8'))
-    matching = sorted(name for name in names if name.startswith(f'{soc}-'))
-    board_match = None if board is None else f'{soc}-{board}' in names
+    if not re.fullmatch(r'[a-z0-9]+', soc):
+        raise ValueError('SoC identifier must be alphanumeric and lowercase')
+    if board is not None and not re.fullmatch(r'[a-z0-9_-]+', board):
+        raise ValueError('DTB suffix must contain only lowercase letters, digits, underscores or hyphens')
+    names = sorted(set(DTB_RE.findall(makefile.read_text(encoding='utf-8'))))
+    matching = [name for name in names if name.startswith(f'{soc}-')]
+    source_files = {name: (root / (name + '.dts')).is_file() for name in matching}
+    requested = None if board is None else f'{soc}-{board}'
+    present = None if requested is None else requested in matching and source_files[requested]
     return {
-        'soc': soc,
-        'board': board,
-        'apple_dtbs_declared': len(names),
-        'soc_dtbs_declared': matching,
-        'board_dtb_declared': board_match,
-        'm1n1_source_present': (m1n1 / 'Makefile').is_file() and (m1n1 / 'src').is_dir(),
-        'device_boot_verified': False,
-        'meaning': 'Source inventory only; A14 boot and hardware compatibility are unverified.',
+        'hardware_reference': {'model': MODEL, 'board_config': BOARD_CONFIG, 'soc': SOC},
+        'inspected_soc': soc,
+        'kernel_commit': git_head(kernel),
+        'm1n1_commit': git_head(m1n1),
+        'apple_dtb_declarations': len(names),
+        'soc_dtb_declarations': matching,
+        'soc_dts_files_present': source_files,
+        'requested_dtb': requested,
+        'requested_dtb_declared_with_source': present,
+        'm1n1_source_checkout_present': (m1n1 / 'Makefile').is_file() and (m1n1 / 'src').is_dir(),
+        'boot_chain_verified': False,
+        'on_device_boot_verified': False,
+        'scope': 'SOURCE INVENTORY ONLY. DTB declarations do not establish a supported driver, boot method, or actual device compatibility.',
     }
 
 
 def main(argv=None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--kernel', type=Path, default=Path('vendor/linux'))
-    parser.add_argument('--m1n1', type=Path, default=Path('vendor/m1n1'))
-    parser.add_argument('--soc', default='t8101', help='Apple A14 SoC code')
-    parser.add_argument('--board', help='Confirmed exact board code (do not guess)')
-    parser.add_argument('--json', action='store_true')
-    args = parser.parse_args(argv)
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument('--kernel', type=Path, default=Path('vendor/linux'))
+    p.add_argument('--m1n1', type=Path, default=Path('vendor/m1n1'))
+    p.add_argument('--soc', default=SOC)
+    p.add_argument('--board', help='Verified DTB *filename suffix* (not Apple BoardConfig D53gAP)')
+    p.add_argument('--json', action='store_true')
+    args = p.parse_args(argv)
     try:
         result = inspect(args.kernel, args.m1n1, args.soc.lower(), args.board.lower() if args.board else None)
-    except (OSError, UnicodeError) as exc:
-        parser.error(str(exc))
+    except (OSError, UnicodeError, ValueError) as exc:
+        p.error(str(exc))
     if args.json:
-        print(json.dumps(result, indent=2))
+        print(json.dumps(result, indent=2, sort_keys=True))
     else:
-        print(f'SoC: {result["soc"]} | declared DTBs: {result["soc_dtbs_declared"]}')
-        print(f'Exact board DTB declared: {result["board_dtb_declared"]}')
-        print(f'm1n1 sources present: {result["m1n1_source_present"]}')
-        print('On-device boot verified: NO (this tool cannot establish it)')
-    # A candidate device tree is NOT evidence that booting is possible.
-    return 2 if not result['soc_dtbs_declared'] or result['board_dtb_declared'] is False else 0
+        print(f'Inspected SoC: {result["inspected_soc"]}; DTBs declared: {result["soc_dtb_declarations"]}')
+        print(f'Kernel HEAD: {result["kernel_commit"]}; m1n1 HEAD: {result["m1n1_commit"]}')
+        print('Boot chain and device execution: NOT VERIFIED')
+    return 2 if not result['soc_dtb_declarations'] or any(not present for present in result['soc_dts_files_present'].values()) or result['requested_dtb_declared_with_source'] is False else 0
 
 
 if __name__ == '__main__':
