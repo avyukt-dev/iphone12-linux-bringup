@@ -23,6 +23,9 @@ REL_KERNEL = './netboot/debian-installer/arm64/linux'
 SHA_URL = BASE + 'SHA256SUMS'
 KERNEL_URL = BASE + REL_KERNEL.removeprefix('./')
 MARKER = 'QEMU_SYSTEM_ARM64_SHELL_OK'
+# Exact Debian 12.15 netboot ARM64 kernel bytes tested in CI on 2026-09-22.
+# Reject upstream mirror/installer updates instead of silently changing the VM kernel.
+PINNED_KERNEL_SHA256 = '84b9c190bb4589c4a9527e3191fec051f9f115e88f0a3e8afae96ba0dfb4dfef'
 
 
 def checksum_from_manifest(manifest: str) -> str:
@@ -43,6 +46,8 @@ def acquire_kernel(path: Path) -> str:
     with urlopen(SHA_URL, timeout=30) as remote:
         manifest = remote.read(512 * 1024).decode('ascii')
     expected = checksum_from_manifest(manifest)
+    if expected != PINNED_KERNEL_SHA256:
+        raise ValueError('Debian current kernel changed: review and repin only after a new VM validation')
     path.parent.mkdir(parents=True, exist_ok=True)
     if path.exists() and hashlib.sha256(path.read_bytes()).hexdigest() == expected:
         return expected
