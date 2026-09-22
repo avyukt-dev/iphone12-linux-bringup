@@ -1,7 +1,7 @@
 name: Generic ARM64 kernel plus initramfs virtual-machine smoke test
 on:
   push:
-    branches: [main, test/arm64-fullsystem-boot]
+    branches: [main, test/arm64-fullsystem-boot, test/qemu-virt-network-http]
   pull_request:
 
 permissions:
@@ -26,5 +26,7 @@ jobs:
       - name: Boot a generic ARM64 Linux kernel and run our shell
         run: |
           python3 scripts/test_qemu_arm64_system.py --timeout 100
+      - name: Probe isolated generic ARM64 VM virtio networking and HTTP
+        run: python3 scripts/test_qemu_arm64_network.py --timeout 75
       - name: Verify source and archive tests
         run: python3 -m unittest discover -s tests -v
