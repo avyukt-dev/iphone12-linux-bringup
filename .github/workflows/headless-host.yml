@@ -1,0 +1,25 @@
+name: ARM64 early-init host-only validation
+on:
+  push:
+    branches: [main, feature/headless-arm64-initramfs]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  headless-host:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install ARM64 build and userspace emulator
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu qemu-user
+      - name: Build and self-test host-only AArch64 early-init
+        run: bash scripts/build_headless.sh
+      - name: Verify deterministic archive and packaging tests
+        run: |
+          python3 -m unittest discover -s tests -v
+          python3 scripts/verify_arm64_elf.py build/headless/init
+          sha256sum build/headless/early-initramfs.cpio.gz
