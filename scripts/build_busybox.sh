@@ -45,6 +45,11 @@ for symbol in ('STATIC', 'ASH', 'HTTPD', 'IP'):
         s = s.replace(off, on)
     elif on not in s:
         raise SystemExit(f'Missing BusyBox CONFIG_{symbol}; audit upstream config before continuing')
+# BusyBox 1.37.0 defaults to x86 SHA-NI acceleration and references x86-only
+# sha1_process_block64_shaNI when cross-compiling for ARM64. Turn off both
+# x86-specific options; do not patch the upstream GPL source.
+for symbol in ('SHA1_HWACCEL', 'SHA256_HWACCEL'):
+    s = s.replace(f'CONFIG_{symbol}=y', f'# CONFIG_{symbol} is not set')
 p.write_text(s)
 PY
 make -C "$ROOT" -j2 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- \
