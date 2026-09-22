@@ -12,7 +12,7 @@ Goal: a minimal headless native ARM64 Linux environment with a terminal and HTTP
 
 The existing Hoolock and Sandcastle boot paths do not establish custom-kernel execution on the iPhone 12's A14. A successful compile is **not** a successful device boot.
 
-A host-only ARM64 early-init image can now be cross-built and checked under QEMU user mode; [see the explicit limitations and instructions](docs/headless-userspace.md). It provides neither an interactive shell nor a verified A14 Linux boot.
+A host-only ARM64 early-init image can be cross-built and checked under QEMU user mode. An **optional** pinned BusyBox build adds `/bin/sh` and a `/bin/httpd` applet (and a static test page) for future headless kernel experiments; see the [instructions and evidence boundaries](docs/headless-userspace.md). No shell or server has booted on the iPhone 12. Native A14 boot remains unverified.
 
 ## Host setup
 

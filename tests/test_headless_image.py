@@ -81,6 +81,25 @@ class EarlyInitramfsTests(unittest.TestCase):
         self.assertIn('TRAILER!!!', entries)
         self.assertNotIn('bin/sh', entries)
 
+    def test_optional_busybox_shell_and_httpd_entries(self):
+        elf = fake_arm64_elf()
+        entries = decode_newc(gzip.decompress(packer.build_gzip(elf, elf)))
+        self.assertEqual(entries['bin/busybox']['payload'], elf)
+        self.assertTrue(stat.S_ISREG(entries['bin/busybox']['mode']))
+        for name in ('sh', 'httpd', 'ip', 'ls', 'mount'):
+            self.assertTrue(stat.S_ISLNK(entries[f'bin/{name}']['mode']))
+            self.assertEqual(entries[f'bin/{name}']['payload'], b'busybox')
+        self.assertIn('www/index.html', entries)
+        self.assertFalse(verifier.inspect_elf(elf)['device_boot_verified'])
+
+    def test_busybox_must_have_arm64_elf_header(self):
+        with self.assertRaises(ValueError):
+            packer.build_cpio(fake_arm64_elf(), b'not an ELF binary')
+
+    def test_optional_busybox_archive_remains_deterministic(self):
+        elf = fake_arm64_elf()
+        self.assertEqual(packer.build_gzip(elf, elf), packer.build_gzip(elf, elf))
+
     def test_elf_validator_accepts_minimal_header(self):
         facts = verifier.inspect_elf(fake_arm64_elf())
         self.assertTrue(facts['static'])
