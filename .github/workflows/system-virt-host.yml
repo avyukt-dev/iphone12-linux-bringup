@@ -1,0 +1,30 @@
+name: Generic ARM64 kernel plus initramfs virtual-machine smoke test
+on:
+  push:
+    branches: [main, test/arm64-fullsystem-boot]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  system-virt:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install ARM64 toolchain and generic ARM64 virtual machine
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            gcc-aarch64-linux-gnu libc6-dev-arm64-cross binutils-aarch64-linux-gnu \
+            qemu-user qemu-system-arm curl bzip2 make python3
+      - name: Compile host-only ARM64 userspace and BusyBox shell
+        run: |
+          bash scripts/build_busybox.sh
+          bash scripts/build_headless.sh --with-busybox
+      - name: Boot a generic ARM64 Linux kernel and run our shell
+        run: |
+          python3 scripts/test_qemu_arm64_system.py --timeout 100
+      - name: Verify source and archive tests
+        run: python3 -m unittest discover -s tests -v
