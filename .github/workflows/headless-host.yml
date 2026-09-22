@@ -15,7 +15,7 @@ jobs:
       - name: Install ARM64 build and userspace emulator
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu qemu-user
+          sudo apt-get install -y --no-install-recommends gcc-aarch64-linux-gnu libc6-dev-arm64-cross binutils-aarch64-linux-gnu qemu-user
       - name: Build and self-test host-only AArch64 early-init
         run: bash scripts/build_headless.sh
       - name: Verify deterministic archive and packaging tests
