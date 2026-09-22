@@ -61,6 +61,8 @@ def run_vm_network(kernel: Path, initramfs: Path, timeout: float = 100) -> None:
                 if len(output) > 2 * 1024 * 1024:
                     del output[:len(output) - 1024 * 1024]
                 text = output.decode('utf-8', errors='replace')
+                if configured and "ip: can't find device 'eth0'" in text:
+                    raise RuntimeError('Generic VM guest has no eth0; network driver/interface is unverified')
                 if not configured and 'early-init: launching interactive /dev/console shell' in text:
                     commands = (
                         'ip link show eth0\n'
