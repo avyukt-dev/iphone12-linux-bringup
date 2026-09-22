@@ -1,0 +1,8 @@
+vendor/
+__pycache__/
+*.py[cod]
+*.dtb
+*.img
+*.bin
+*.zip
+.env
