@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "scope": "Documented native boot-entry research, not executable exploits or hardware validation",
+  "target": {
+    "product_type": "iPhone13,2",
+    "board_config": "D53gAP",
+    "soc": "t8101",
+    "ios_version": "27.0",
+    "ios_build": "24A437",
+    "hardware_class": "production",
+    "hardware_class_basis": "retail-device working assumption; boot ROM revision has not been measured on the owner's phone",
+    "bootrom_build": null
+  },
+  "candidates": [
+    {
+      "id": "checkm8-hoolock-pongo",
+      "source_url": "https://github.com/HoolockLinux/docs/blob/master/README.md",
+      "supported_socs": [
+        "a7-a11",
+        "t2"
+      ],
+      "hardware_classes": [
+        "production"
+      ],
+      "supported_bootrom_builds": [],
+      "excluded_bootrom_builds": [],
+      "independent_entry": true,
+      "assessment": "No documented A14 entry in the cited Hoolock support scope"
+    },
+    {
+      "id": "usbliter8-a14-a0-b0",
+      "source_url": "https://proteas.github.io/sec/2026/08/31/usbliter8-on-a14.html",
+      "supported_socs": [
+        "t8101"
+      ],
+      "hardware_classes": [
+        "preproduction"
+      ],
+      "supported_bootrom_builds": [
+        "5281.0.0.100.22",
+        "5281.0.0.100.34"
+      ],
+      "excluded_bootrom_builds": [
+        "5281.0.0.100.45"
+      ],
+      "independent_entry": true,
+      "assessment": "Researcher reports A0/B0 prototype susceptibility; A14 B1 production not affected"
+    },
+    {
+      "id": "m1n1-chainloader",
+      "source_url": "https://github.com/HoolockLinux/docs/blob/master/tutorials/SETUP_pongoOS.md",
+      "supported_socs": [
+        "t8101"
+      ],
+      "hardware_classes": [
+        "production",
+        "preproduction"
+      ],
+      "supported_bootrom_builds": [],
+      "excluded_bootrom_builds": [],
+      "independent_entry": false,
+      "assessment": "Chainloader requires a prior boot-entry mechanism; adding a Linux payload does not create one"
+    }
+  ]
+}

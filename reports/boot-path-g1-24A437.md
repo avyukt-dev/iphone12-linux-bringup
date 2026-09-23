@@ -17,6 +17,10 @@ The first two executions reported `device_query_failed` for all four keys. The r
 
 Public identifiers for the iPhone 12 match `t8101` / A14 and the board configuration above: https://ipsw.me/iPhone13%2C2/info/ . Public firmware listings also associate iOS 27.0 with build 24A437 for this device: https://ipsw.dev/iPhone13%2C2 .
 
+## Important follow-up: A14 prototype ROM is not production ROM
+
+A 2026-08-31 reverse-engineering report found that **A14 A0/B0 pre-production** Boot ROM revisions have the `usbliter8` weakness while the **A14 B1 production** revision does not. The production-ROM conclusion is method-specific and does not rule out distinct future boot-entry methods. The owner's iOS `24A437` build is not a Boot ROM revision. See the [2026-09-23 production/prototype analysis](production-a14-bootrom-assessment-2026-09-23.md) and the [offline source-claim triage](../scripts/triage_boot_entries.py). Do not reinterpret an A14 *prototype* demonstration as production iPhone 12 support.
+
 ## Explicit boot-chain prerequisite
 
 Apple documents signature verification along the iPhone Boot ROM → iBoot → iOS kernel chain: https://support.apple.com/en-au/guide/security/secb3000f149/web . The fact that an iPhone responds to `ideviceinfo`, can run an iOS app, or can be placed in ordinary recovery mode does **not** authorize the execution of an unsigned native Linux kernel.
